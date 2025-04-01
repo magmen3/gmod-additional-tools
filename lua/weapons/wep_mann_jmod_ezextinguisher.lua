@@ -14,16 +14,16 @@ SWEP.Spawnable = false
 SWEP.UseHands = true
 SWEP.DrawAmmo = false
 SWEP.DrawCrosshair = false
-SWEP.EZdroppable = true -- If this is to be attached to an armor piece
+SWEP.EZdroppable = true
 SWEP.ViewModel = "models/weapons/c_fire_extinguisher.mdl"
 SWEP.WorldModel = "models/weapons/w_fire_extinguisher.mdl"
---[[SWEP.BodyHolsterModel = "models/weapons/sanic/w_m2_static.mdl"
+--[[SWEP.BodyHolsterModel = "models/weapons/w_fire_extinguisher.mdl"
 SWEP.BodyHolsterSlot = "back"
 SWEP.BodyHolsterAng = Angle(-70, 0, 200)
 SWEP.BodyHolsterAngL = Angle(-70, 0, 200)
 SWEP.BodyHolsterPos = Vector(0, -15, 10)
 SWEP.BodyHolsterPosL = Vector(0, -15, 10)
-SWEP.BodyHolsterScale = 1--]]
+SWEP.BodyHolsterScale = 1]]
 SWEP.ViewModelFOV = 55
 SWEP.Slot = 4
 SWEP.SlotPos = 3
@@ -36,66 +36,19 @@ SWEP.Secondary.ClipSize = -1
 SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Automatic = true
 SWEP.Secondary.Ammo = "none"
-SWEP.ShowWorldModel = true
 SWEP.EZconsumes = {JMod.EZ_RESOURCE_TYPES.GAS, JMod.EZ_RESOURCE_TYPES.WATER}
 SWEP.MaxGas = 100
 SWEP.MaxWater = 100
-SWEP.LastSalvageAttempt = 0
-SWEP.NextSwitch = 0
 SWEP.NextExtinguish = 0
-SWEP.NextIgniteTry = 0
 SWEP.NextSparkTime = 0
 
-local STATE_NOTHIN, STATE_SPRAYIN, STATE_FIZZLIN, STATE_IGNITIN, STATE_FLAMIN = 0, 1, 2, 3, 4
+local STATE_NOTHIN, STATE_SPRAYIN = 0, 1
 function SWEP:Initialize()
 	self:SetHoldType("slam")
 	self.NextIdle = 0
 	self:Deploy()
 	self:SetGas(0)
 	self:SetWater(0)
-end
-
-local GlowSprite = Material("mat_jack_gmod_glowsprite")
-function SWEP:ViewModelDrawn()
-	local owner = self:GetOwner()
-
-	if self:GetState() == STATE_FLAMIN then
-		render.SetMaterial(GlowSprite)
-		local Dir = owner:GetAimVector()
-		local Pos = owner:GetShootPos() + owner:GetRight() * 18 - owner:GetUp() * 18
-		for i = 1, 10 do
-			local Inv = 10 - i
-			render.DrawSprite(Pos + Dir * (i * 20 + math.random(100, 130)), 4 * Inv, 4 * Inv, Color(214, 214, 214))
-		end
-	end
-end
-
-function SWEP:DrawWorldModel()
-	self:DrawModel()
-	if self:GetState() == STATE_FLAMIN then
-		local owner = self:GetOwner()
-
-		render.SetMaterial(GlowSprite)
-		local Dir = owner:GetAimVector()
-		--local Pos = owner:GetShootPos() + owner:GetRight() * 10 - owner:GetUp() * 17 - Dir * 60
-		local Pos = self:GetAttachment(1).Pos
-		for i = 1, 20 do
-			local Inv = 20 - i
-			render.DrawSprite(Pos + Dir * (i * 2 + math.random(0, 30)), 1 * Inv, 1 * Inv, Color(255, 150, 100, 255))
-		end
-
-		local dlight = DynamicLight(self:EntIndex())
-		if dlight then
-			dlight.pos = Pos + Dir * 1
-			dlight.r = 255
-			dlight.g = 150
-			dlight.b = 100
-			dlight.brightness = 4
-			dlight.Decay = 200
-			dlight.Size = 400
-			dlight.DieTime = CurTime() + .5
-		end
-	end
 end
 
 local Downness, Backness = 0, 0
