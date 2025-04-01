@@ -1,0 +1,19 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/weapons/wrench/Wrench_diffuse_01"
+	"$bumpmap" "models/weapons/wrench/Wrench_normal2"
+
+	"$halflambert" "1"
+
+	"$phong" "1"
+	"$phongexponent" "16"
+	"$phongexponenttexture" "models/weapons/wrench/Wrench_diffuse_01"
+	"$phongalbedotint" "4"
+	"$phongboost" "0.5"
+	"$phongfresnelranges"	"[0.1 0.1 0.5]"
+
+	"$rimlight" "1"
+	"$rimlightexponent" "16"
+	"$rimlightboost" "0.1"
+
+}

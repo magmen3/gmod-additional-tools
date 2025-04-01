@@ -1,0 +1,21 @@
+"VertexLitGeneric"
+{
+	"$basetexture" "models/Weapons/v_fire_extinguisher/clamp"
+
+	$phong 1
+	$phongexponent			32
+	$phongboost				"1"
+	$phongfresnelranges		"[0.2 0.2 0.2]"
+	$basemapalphaphongmask	1
+	$phongtint 				"[0.6 0.8 1]"
+	$phongalbedotint 		"1"	
+
+	$rimlight "1"
+	$rimlightexponent "16"
+	$rimlightboost "0.1"
+
+	$detail detail\metal_detail_01
+	$detailscale 4.283
+	$detailblendfactor .65
+	$detailblendmode 0
+}
