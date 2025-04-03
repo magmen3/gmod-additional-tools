@@ -32,8 +32,6 @@ SWEP.Secondary.ClipSize = -1
 SWEP.Secondary.DefaultClip = -1
 SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = "none"
---SWEP.EZconsumes = {JMod.EZ_RESOURCE_TYPES.POWER}
---SWEP.MaxSupplies = 100
 SWEP.ConnectionAttempts = 0
 SWEP.EZradio = true
 
@@ -41,7 +39,10 @@ local STATE_OFF, STATE_CONNECTING = 0, 1
 function SWEP:SetupDataTables()
 	self:NetworkVar("Int", 1, "OutpostID")
 	self:NetworkVar("Int", 2, "State")
-	--self:NetworkVar("Int", 100, "Supplies") -- broken as fuck
+end
+
+function SWEP:GetVoice()
+	return "normal"
 end
 
 function SWEP:OnDrop()
@@ -53,7 +54,6 @@ function SWEP:OnDrop()
 		Ent:Spawn()
 		Ent:Activate()
 		Ent:GetPhysicsObject():SetVelocity(Owner:GetVelocity())
-		--Ent:SetSupplies(self:GetSupplies())
 		self:Remove()
 	end
 end
@@ -71,51 +71,8 @@ function SWEP:Initialize()
 	self:SetState(STATE_OFF)
 	self:SetHoldType("normal")
 	self.NextIdle = 0
-	--self.MaxSupplies = 100
-	--self:SetSupplies(self.MaxSupplies)
 end
 
---[[function SWEP:GetEZsupplies(resourceType)
-	local AvailableResources = {
-		[JMod.EZ_RESOURCE_TYPES.POWER] = math.floor(self:GetSupplies()),
-	}
-	if resourceType then
-		if AvailableResources[resourceType] and AvailableResources[resourceType] > 0 then
-			return AvailableResources[resourceType]
-		else
-			return nil
-		end
-	else
-		return AvailableResources
-	end
-end]]
---function SWEP:SetEZsupplies(typ, amt, setter)
---	if not SERVER then return end
---	local ResourceSetMethod = self["Set"..JMod.EZ_RESOURCE_TYPE_METHODS[typ]]
---	if ResourceSetMethod then
---		ResourceSetMethod(self, math.Clamp(amt, 0, self["Max"..JMod.EZ_RESOURCE_TYPE_METHODS[typ]] or 100))
---	end
---end
---[[function SWEP:TryLoadResource(typ, amt)
-	if amt < 1 then return 0 end
-	local Accepted = 0
-
-	for _, v in pairs(self.EZconsumes) do
-		if typ == v then
-			local CurAmt = self:GetEZsupplies(typ) or 0
-			local Take = math.min(amt, self.MaxSupplies - CurAmt)
-			
-			if Take > 0 then
-				self:SetSupplies(CurAmt + Take)
-				self:SetEZsupplies(typ, CurAmt + Take)
-				self:GetOwner():EmitSound("snd_jack_turretawaken.ogg", 65, math.random(90, 110))
-				Accepted = Take
-			end
-		end
-	end
-
-	return Accepted
-end]]
 function SWEP:Speak(msg, parrot)
 	if self:GetState() < 1 then return end
 	if not msg then msg = "uhhhh" end
@@ -182,12 +139,15 @@ function SWEP:Connect(ply)
 	JMod.EZradioEstablish(self, tostring(Team)) -- we store team indices as strings because they might be huge (if it's a player's acct id)
 	local OutpostID = self:GetOutpostID()
 	local Station = JMod.EZ_RADIO_STATIONS[OutpostID]
+	if not Station or Station == nil then
+		self:Speak("Couldn't find a free station, try again next time.")
+		self:TurnOff()
+	end
 	self:SetState(Station.state)
 	timer.Simple(1, function()
 		if IsValid(self) then
 			self:Speak("Comm line established with J.I. Radio Outpost " .. OutpostID)
 			self.ConnectionAttempts = 0
-			--self:SetSupplies(100) -- shit
 		end
 	end)
 end
@@ -224,7 +184,6 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Think()
-	--print(self:GetSupplies())
 	local State, Time = self:GetState(), CurTime()
 	local idletime = self.NextIdle
 	if idletime > 0 and Time > idletime then
@@ -234,15 +193,6 @@ function SWEP:Think()
 
 	if self.NextRealThink < Time then
 		self.NextRealThink = Time + 4
-		--[[if State >= 1 then
-			self:SetSupplies(math.Clamp(self:GetSupplies() - 1, 0, 100))
-		end
-
-		if State >= 1 and self:GetSupplies() <= 0 then -- broken as fuck
-			self:TurnOff()
-		elseif State <= 0 and self:GetSupplies() >= 1 then
-			self:TurnOn()
-		end]]
 		if State == STATE_CONNECTING then
 			self:Speak("Broadcast received, establishing comm line...")
 			self:Connect(self:GetOwner())
@@ -292,7 +242,6 @@ function SWEP:EZreceiveSpeech(ply, txt)
 		if BFFreq then Name = string.sub(txt, 7) end
 		if Name == "help" then
 			if State == 2 then
-				--local Msg,Num='stand near radio\nsay in chat: "status", or "supply radio: [package]"\navailable packages are:\n',1
 				local Msg, Num = 'stand near radio and say in chat "supply radio: status", or "supply radio: [package]". available packages are:', 1
 				self:Speak(Msg, ParrotPhrase)
 				local str = ""
@@ -349,11 +298,9 @@ if CLIENT then
 
 	local clr_hint1, clr_hint2, clr_hint3 = Color(255, 255, 255, 200), Color(255, 255, 255, 50), Color(0, 0, 0, 50)
 	function SWEP:DrawHUD()
-		local W, H, Supplies = ScrW(), ScrH(), nil --, self:GetSupplies()
-		--draw.SimpleTextOutlined("Power: " .. Supplies, "Trebuchet24", W * .4, H * .7, clr_hint1, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 3, clr_hint3)
+		local W, H = ScrW(), ScrH()
 		draw.SimpleTextOutlined("Status: " .. StateMsgs[self:GetState()], "Trebuchet24", W * .4, H * .7 + 30, clr_hint1, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 3, clr_hint3)
 		draw.SimpleTextOutlined("Backspace: drop", "Trebuchet24", W * .4, H * .7 + 60, clr_hint2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 3, clr_hint3)
-		--draw.SimpleTextOutlined("ALT+E on battery: recharge", "Trebuchet24", W * .4, H * .7 + 90, clr_hint2, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 3, clr_hint3)
 	end
 
 	function SWEP:PrimaryAttack()
